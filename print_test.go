@@ -13,24 +13,16 @@ type printTest struct {
 
 var printTests = []printTest{
 	{
-		methodNode{nameNode{"foo"}, "bar", []Node{textNode{"arg1"}, numberNode{2}, boolNode{true}}},
-		`foo.bar("arg1", 2, true)`,
+		builtinNode{"sum", []Node{nameNode{"top 5 - speaker"}}},
+		"sum(`top 5 - speaker`)",
 	},
 	{
-		indexNode{propertyNode{methodNode{methodNode{nameNode{"foo"}, "bar", []Node{}}, "foo", []Node{}}, "baz"}, numberNode{33}},
-		"foo.bar().foo().baz[33]",
+		builtinNode{"length", []Node{textNode{"foo"}}},
+		"length(\"foo\")",
 	},
 	{
-		mapNode{[]pairNode{{identifierNode{"foo"}, numberNode{1}}, {binaryNode{"+", numberNode{1}, numberNode{2}}, numberNode{2}}}},
-		`{"foo": 1, (1 + 2): 2}`,
-	},
-	{
-		functionNode{"call", []Node{propertyNode{arrayNode{[]Node{numberNode{1}, unaryNode{"not", boolNode{true}}}}, "foo"}}},
-		"call([1, not true].foo)",
-	},
-	{
-		builtinNode{"len", []Node{nameNode{"array"}}},
-		"len(array)",
+		functionNode{"call", []Node{arrayNode{[]Node{numberNode{1}, unaryNode{"not", boolNode{true}}}}}},
+		"call([1, not true])",
 	},
 	{
 		binaryNode{"and", binaryNode{"or", nameNode{"a"}, nameNode{"b"}}, nameNode{"c"}},

@@ -61,36 +61,6 @@ var lexTests = []lexTest{
 		},
 	},
 	{
-		`(3 + 5) ~ foo("bar").baz[4]`,
-		[]token{
-			{kind: punctuation, value: "("},
-			{kind: number, value: "3"},
-			{kind: operator, value: "+"},
-			{kind: number, value: "5"},
-			{kind: punctuation, value: ")"},
-			{kind: operator, value: "~"},
-			{kind: name, value: "foo"},
-			{kind: punctuation, value: "("},
-			{kind: text, value: "bar"},
-			{kind: punctuation, value: ")"},
-			{kind: punctuation, value: "."},
-			{kind: name, value: "baz"},
-			{kind: punctuation, value: "["},
-			{kind: number, value: "4"},
-			{kind: punctuation, value: "]"},
-			{kind: eof},
-		},
-	},
-	{
-		`1..2`,
-		[]token{
-			{kind: number, value: "1"},
-			{kind: operator, value: ".."},
-			{kind: number, value: "2"},
-			{kind: eof},
-		},
-	},
-	{
 		`matches`,
 		[]token{
 			{kind: operator, value: "matches"},
@@ -104,12 +74,50 @@ var lexTests = []lexTest{
 			{kind: eof},
 		},
 	},
+	{
+		"`bounces` * 100 / `sessions of current month`",
+		[]token{
+			{kind: name, value: "bounces"},
+			{kind: operator, value: "*"},
+			{kind: number, value: "100"},
+			{kind: operator, value: "/"},
+			{kind: name, value: "sessions of current month"},
+			{kind: eof},
+		},
+	},
+	{
+		"[1, 02, 1e3, 1.2e-4]",
+		[]token{
+			{kind: punctuation, value: "["},
+			{kind: number, value: "1"},
+			{kind: punctuation, value: ","},
+			{kind: number, value: "02"},
+			{kind: punctuation, value: ","},
+			{kind: number, value: "1e3"},
+			{kind: punctuation, value: ","},
+			{kind: number, value: "1.2e-4"},
+			{kind: punctuation, value: "]"},
+			{kind: eof},
+		},
+	},
 }
 
 var lexErrorTests = []lexErrorTest{
 	{
-		`{[}]`,
+		`([)]`,
 		`unclosed "["`,
+	},
+	{
+		`1..2`, // no more range operators
+		`unrecognized character: U+002E '.'`,
+	},
+	{
+		`(3 + 5) ~ foo("bar").baz[4]`, // no field
+		`unrecognized character: U+002E '.'`,
+	},
+	{
+		`({})`, // no {}
+		`unrecognized character: U+007B '{'`,
 	},
 }
 

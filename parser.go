@@ -2,9 +2,9 @@ package expr
 
 import (
 	"fmt"
-	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -55,7 +55,52 @@ var binaryOperators = map[string]info{
 }
 
 var builtins = map[string]bool{
-	"len": true,
+	// AGG
+	"avg":            true,
+	"count":          true,
+	"count_distinct": true,
+	"cusum":          true,
+	"max":            true,
+	"median":         true,
+	"min":            true,
+	"percentile":     true,
+	"stddev":         true,
+	"sum":            true,
+	"variance":       true,
+
+	// DATE
+	"date_diff": true,
+	"day":       true,
+	"hour":      true,
+	"minute":    true,
+	"month":     true,
+	"quarter":   true,
+	"second":    true,
+	"week":      true,
+	"weekday":   true,
+	"year":      true,
+
+	// MATH
+	"abs":   true,
+	"acos":  true,
+	"asin":  true,
+	"atan":  true,
+	"ceil":  true,
+	"cos":   true,
+	"floor": true,
+	"log":   true,
+	"log10": true,
+	"pow":   true,
+	"round": true,
+	"sin":   true,
+	"tan":   true,
+
+	// TEXT
+	"concat": true,
+	"length": true,
+	"lower":  true,
+	"trim":   true,
+	"upper":  true,
 }
 
 type parser struct {
@@ -64,7 +109,6 @@ type parser struct {
 	position int
 	current  token
 	strict   bool
-	types    typesTable
 }
 
 // OptionFn for configuring parser.
@@ -81,7 +125,6 @@ func Parse(input string, ops ...OptionFn) (Node, error) {
 		input:   input,
 		tokens:  tokens,
 		current: tokens[0],
-		types:   make(typesTable),
 	}
 
 	for _, op := range ops {
@@ -97,101 +140,7 @@ func Parse(input string, ops ...OptionFn) (Node, error) {
 		return nil, p.errorf("unexpected token %v", p.current)
 	}
 
-	if p.strict {
-		_, err = node.Type(p.types)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return node, nil
-}
-
-// Define sets variable for type checks during parsing.
-func Define(name string, t interface{}) OptionFn {
-	return func(p *parser) {
-		p.strict = true
-		p.types[name] = reflect.TypeOf(t)
-	}
-}
-
-// Deprecated: Use expr.Env instead.
-func With(i interface{}) OptionFn {
-	return Env(i)
-}
-
-// Env sets variables for type checks during parsing.
-// If struct is passed, all fields will be treated as variables,
-// as well as all fields of embedded structs and struct itself.
-//
-// If map is passed, all items will be treated as variables
-// (key as name, value as type).
-func Env(i interface{}) OptionFn {
-	return func(p *parser) {
-		p.strict = true
-		for k, v := range p.createTypesTable(i) {
-			p.types[k] = v
-		}
-	}
-}
-
-func (p *parser) createTypesTable(i interface{}) typesTable {
-	types := make(typesTable)
-	v := reflect.ValueOf(i)
-	t := reflect.TypeOf(i)
-
-	d := t
-	if t.Kind() == reflect.Ptr {
-		d = t.Elem()
-	}
-
-	switch d.Kind() {
-	case reflect.Struct:
-		types = p.fieldsFromStruct(d)
-
-		// Methods of struct should be gathered from original struct with pointer,
-		// as methods maybe declared on pointer receiver. Also this method retrieves
-		// all embedded structs methods as well, no need to recursion.
-		for i := 0; i < t.NumMethod(); i++ {
-			m := t.Method(i)
-			types[m.Name] = m.Type
-		}
-
-	case reflect.Map:
-		for _, key := range v.MapKeys() {
-			value := v.MapIndex(key)
-			if key.Kind() == reflect.String && value.IsValid() && value.CanInterface() {
-				types[key.String()] = reflect.TypeOf(value.Interface())
-			}
-		}
-	}
-
-	return types
-}
-
-func (p *parser) fieldsFromStruct(t reflect.Type) typesTable {
-	types := make(typesTable)
-	t = dereference(t)
-	if t == nil {
-		return types
-	}
-
-	switch t.Kind() {
-	case reflect.Struct:
-		for i := 0; i < t.NumField(); i++ {
-			f := t.Field(i)
-
-			if f.Anonymous {
-				for name, typ := range p.fieldsFromStruct(f.Type) {
-					types[name] = typ
-				}
-			}
-
-			types[f.Name] = f.Type
-		}
-	}
-
-	return types
 }
 
 func (p *parser) errorf(format string, args ...interface{}) *syntaxError {
@@ -292,7 +241,7 @@ func (p *parser) parsePrimary() (Node, error) {
 				return nil, err
 			}
 
-			return p.parsePostfixExpression(unaryNode{operator: token.value, node: expr})
+			return unaryNode{operator: token.value, node: expr}, nil
 		}
 	}
 
@@ -311,7 +260,7 @@ func (p *parser) parsePrimary() (Node, error) {
 			return nil, p.errorf("an opened parenthesis is not properly closed")
 		}
 
-		return p.parsePostfixExpression(expr)
+		return expr, nil
 	}
 
 	return p.parsePrimaryExpression()
@@ -397,17 +346,12 @@ func (p *parser) parsePrimaryExpression() (Node, error) {
 			if err != nil {
 				return nil, err
 			}
-		} else if token.is(punctuation, "{") {
-			node, err = p.parseMapExpression()
-			if err != nil {
-				return nil, err
-			}
 		} else {
 			return nil, p.errorf("unexpected token %v", token).at(token)
 		}
 	}
 
-	return p.parsePostfixExpression(node)
+	return node, nil
 }
 
 func (p *parser) parseNameExpression(token token) (Node, error) {
@@ -417,8 +361,9 @@ func (p *parser) parseNameExpression(token token) (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := builtins[token.value]; ok {
-			node = builtinNode{name: token.value, arguments: arguments}
+		tv := strings.ToLower(token.value)
+		if _, ok := builtins[tv]; ok {
+			node = builtinNode{name: tv, arguments: arguments}
 		} else {
 			node = functionNode{name: token.value, arguments: arguments}
 		}
@@ -434,128 +379,6 @@ func (p *parser) parseArrayExpression() (Node, error) {
 		return nil, err
 	}
 	return arrayNode{nodes}, nil
-}
-
-func (p *parser) parseMapExpression() (Node, error) {
-	err := p.expect(punctuation, "{")
-	if err != nil {
-		return nil, err
-	}
-
-	nodes := make([]pairNode, 0)
-	for !p.current.is(punctuation, "}") {
-		if len(nodes) > 0 {
-			err = p.expect(punctuation, ",")
-			if err != nil {
-				return nil, p.errorf("a map value must be followed by a comma")
-			}
-		}
-
-		var key Node
-		// a map key can be:
-		//  * a number
-		//  * a text
-		//  * a name, which is equivalent to a string
-		//  * an expression, which must be enclosed in parentheses -- (1 + 2)
-		if p.current.is(number) || p.current.is(text) || p.current.is(name) {
-			key = identifierNode{p.current.value}
-			if err := p.next(); err != nil {
-				return nil, err
-			}
-		} else if p.current.is(punctuation, "(") {
-			key, err = p.parseExpression(0)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, p.errorf("a map key must be a quoted string, a number, a name, or an expression enclosed in parentheses (unexpected token %v)", p.current)
-		}
-
-		err = p.expect(punctuation, ":")
-		if err != nil {
-			return nil, p.errorf("a map key must be followed by a colon (:)")
-		}
-
-		node, err := p.parseExpression(0)
-		if err != nil {
-			return nil, err
-		}
-		nodes = append(nodes, pairNode{key, node})
-	}
-
-	err = p.expect(punctuation, "}")
-	if err != nil {
-		return nil, err
-	}
-
-	return mapNode{nodes}, nil
-}
-
-func (p *parser) parsePostfixExpression(node Node) (Node, error) {
-	token := p.current
-	for token.is(punctuation) {
-		if token.value == "." {
-			if err := p.next(); err != nil {
-				return nil, err
-			}
-			token = p.current
-			if err := p.next(); err != nil {
-				return nil, err
-			}
-
-			if token.kind != name &&
-				// Operators like "not" and "matches" are valid method or property names,
-				//
-				// In other words, besides name token kind, operator kind could also be parsed as a property or method.
-				// This is because operators are processed by the lexer prior to names. So "not" in "foo.not()"
-				// or "matches" in "foo.matches" will be recognized as an operator first. But in fact, "not"
-				// and "matches" in such expressions shall be parsed as method or property names.
-				//
-				// And this ONLY works if the operator consists of valid characters for a property or method name.
-				//
-				// Other types, such as text kind and number kind, can't be parsed as property nor method names.
-				//
-				// As a result, if token is NOT an operator OR token.value is NOT a valid property or method name,
-				// an error shall be returned.
-				(token.kind != operator || !isValidIdentifier(token.value)) {
-				return nil, p.errorf("expected name").at(token)
-			}
-
-			if p.current.is(punctuation, "(") {
-				arguments, err := p.parseArguments()
-				if err != nil {
-					return nil, err
-				}
-				node = methodNode{node: node, method: token.value, arguments: arguments}
-			} else {
-				node = propertyNode{node: node, property: token.value}
-			}
-
-		} else if token.value == "[" {
-
-			if err := p.next(); err != nil {
-				return nil, err
-			}
-
-			arg, err := p.parseExpression(0)
-			if err != nil {
-				return nil, err
-			}
-
-			node = indexNode{node: node, index: arg}
-
-			err = p.expect(punctuation, "]")
-			if err != nil {
-				return nil, err
-			}
-
-		} else {
-			break
-		}
-
-		token = p.current
-	}
-	return node, nil
 }
 
 func isValidIdentifier(str string) bool {

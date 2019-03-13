@@ -2,9 +2,9 @@ package expr
 
 import (
 	"fmt"
-	"math"
 	"reflect"
-	"regexp"
+
+	"github.com/datasweet/cast"
 )
 
 // Eval parses and evaluates given input.
@@ -65,15 +65,11 @@ func (n unaryNode) Eval(env interface{}) (interface{}, error) {
 
 	switch n.operator {
 	case "not", "!":
-		return !val.(bool), nil
-	}
-
-	v := toNumber(n, val)
-	switch n.operator {
+		return not.Call(val), nil
 	case "-":
-		return -v, nil
+		return minus.Call(val), nil
 	case "+":
-		return +v, nil
+		return plus.Call(val), nil
 	}
 
 	return nil, fmt.Errorf("implement unary %q operator", n.operator)
@@ -85,128 +81,80 @@ func (n binaryNode) Eval(env interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	switch n.operator {
-	case "or", "||":
-		if left.(bool) {
-			return true, nil
-		}
-		right, err := n.right.Eval(env)
-		if err != nil {
-			return nil, err
-		}
-		return right.(bool), nil
-
-	case "and", "&&":
-		if left.(bool) {
-			right, err := n.right.Eval(env)
-			if err != nil {
-				return nil, err
-			}
-			return right.(bool), nil
-		}
-		return false, nil
-	}
-
 	right, err := n.right.Eval(env)
 	if err != nil {
 		return nil, err
 	}
 
 	switch n.operator {
+	case "or", "||":
+		return logicalOR.Call(left, right), nil
+
+	case "and", "&&":
+		return logicalAND.Call(left, right), nil
+
 	case "==":
-		return equal(left, right), nil
+		return equals.Call(left, right), nil
 
 	case "!=":
-		return !equal(left, right), nil
+		return notequals.Call(left, right), nil
 
 	case "in":
-		ok, err := contains(left, right)
-		if err != nil {
-			return nil, err
-		}
-		return ok, nil
+		return contains(left, right), nil
 
 	case "not in":
-		ok, err := contains(left, right)
-		if err != nil {
-			return nil, err
-		}
-		return !ok, nil
+		return notcontains(left, right), nil
 
 	case "~":
-		return left.(string) + right.(string), nil
-	}
+		return concat.Call(left, right), nil
 
-	// Next goes operators on numbers
-
-	l, r := toNumber(n.left, left), toNumber(n.right, right)
-
-	switch n.operator {
 	case "|":
-		return int(l) | int(r), nil
+		return bitwiseOR.Call(left, right), nil
 
 	case "^":
-		return int(l) ^ int(r), nil
+		return bitwiseXOR.Call(left, right), nil
 
 	case "&":
-		return int(l) & int(r), nil
+		return bitwiseAND.Call(left, right), nil
 
 	case "<":
-		return l < r, nil
+		return lt.Call(left, right), nil
 
 	case ">":
-		return l > r, nil
+		return gt.Call(left, right), nil
 
 	case ">=":
-		return l >= r, nil
+		return gte.Call(left, right), nil
 
 	case "<=":
-		return l <= r, nil
+		return lte.Call(left, right), nil
 
 	case "+":
-		return l + r, nil
+		return add.Call(left, right), nil
 
 	case "-":
-		return l - r, nil
+		return substract.Call(left, right), nil
 
 	case "*":
-		return l * r, nil
+		return multiply.Call(left, right), nil
 
 	case "/":
-		div := r
-		if div == 0 {
+		if div, ok := cast.AsFloat(right); ok && div == 0 {
 			return nil, fmt.Errorf("division by zero")
 		}
-		return l / div, nil
+		return divide.Call(left, right), nil
 
 	case "%":
-		numerator := int64(l)
-		denominator := int64(r)
-		if denominator == 0 {
+		if div, ok := cast.AsInt(right); ok && div == 0 {
 			return nil, fmt.Errorf("division by zero")
 		}
-		return float64(numerator % denominator), nil
+		return remainder.Call(left, right), nil
 
 	case "**":
-		return math.Pow(l, r), nil
-
-	case "..":
-		return makeRange(int64(l), int64(r))
+		return pow.Call(left, right), nil
 	}
 
 	return nil, fmt.Errorf("implement %q operator", n.operator)
-}
-
-func makeRange(min, max int64) ([]float64, error) {
-	size := max - min + 1
-	if size > 1e6 {
-		return nil, fmt.Errorf("range %v..%v exceeded max size of 1e6", min, max)
-	}
-	a := make([]float64, size)
-	for i := range a {
-		a[i] = float64(min + int64(i))
-	}
-	return a, nil
 }
 
 func (n matchesNode) Eval(env interface{}) (interface{}, error) {
@@ -216,7 +164,7 @@ func (n matchesNode) Eval(env interface{}) (interface{}, error) {
 	}
 
 	if n.r != nil {
-		return n.r.MatchString(left.(string)), nil
+		return matches.Call(left, n.r), nil
 	}
 
 	right, err := n.right.Eval(env)
@@ -224,100 +172,193 @@ func (n matchesNode) Eval(env interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	matched, err := regexp.MatchString(right.(string), left.(string))
-	if err != nil {
-		return nil, err
-	}
-	return matched, nil
+	return matches.Call(left, right), nil
 }
 
-func (n propertyNode) Eval(env interface{}) (interface{}, error) {
-	v, err := n.node.Eval(env)
-	if err != nil {
-		return nil, err
-	}
-	p, ok := extract(v, n.property)
-	if !ok {
-		if isNil(v) {
-			return nil, fmt.Errorf("%v is nil", n.node)
-		}
-		return nil, fmt.Errorf("%v undefined (type %T has no field %v)", n, v, n.property)
-	}
-	return p, nil
-}
+func (n builtinNode) Eval(env interface{}) (interface{}, error) {
 
-func (n indexNode) Eval(env interface{}) (interface{}, error) {
-	v, err := n.node.Eval(env)
-	if err != nil {
-		return nil, err
-	}
-	i, err := n.index.Eval(env)
-	if err != nil {
-		return nil, err
-	}
-	p, ok := extract(v, i)
-	if !ok {
-		return nil, fmt.Errorf("cannot get %q from %T: %v", i, v, n)
-	}
-	return p, nil
-}
-
-func (n methodNode) Eval(env interface{}) (interface{}, error) {
-	v, err := n.node.Eval(env)
-	if err != nil {
-		return nil, err
-	}
-
-	method, ok := getFunc(v, n.method)
-	if !ok {
-		return nil, fmt.Errorf("cannot get method %v from %T: %v", n.method, v, n)
-	}
-
-	in := make([]reflect.Value, 0)
-
+	args := make([]interface{}, 0)
 	for _, a := range n.arguments {
 		i, err := a.Eval(env)
 		if err != nil {
 			return nil, err
 		}
-		in = append(in, reflect.ValueOf(i))
+		args = append(args, i)
 	}
 
-	out := reflect.ValueOf(method).Call(in)
-
-	if len(out) == 0 {
-		return nil, nil
-	} else if len(out) > 1 {
-		return nil, fmt.Errorf("method %q must return only one value", n.method)
-	}
-
-	if out[0].IsValid() && out[0].CanInterface() {
-		return out[0].Interface(), nil
-	}
-
-	return nil, nil
-}
-
-func (n builtinNode) Eval(env interface{}) (interface{}, error) {
 	switch n.name {
-	case "len":
-		if len(n.arguments) == 0 {
+	// AGG
+	case "avg":
+		return avg(args...), nil
+	case "count":
+		return count(args...), nil
+	case "count_distinct":
+		return countdistinct(args...), nil
+	case "cusum":
+		return cusum(args...), nil
+	case "max":
+		return max(args...), nil
+	case "median":
+		return median(args...), nil
+	case "min":
+		return min(args...), nil
+	case "percentile":
+		if len(n.arguments) < 2 {
 			return nil, fmt.Errorf("missing argument: %v", n)
 		}
-		if len(n.arguments) > 1 {
-			return nil, fmt.Errorf("too many arguments: %v", n)
-		}
+		return percentile(args[0], args[1:]...), nil
+	case "stddev":
+		return stddev(args...), nil
+	case "sum":
+		return sum(args...), nil
+	case "variance":
+		return variance(args...), nil
 
-		i, err := n.arguments[0].Eval(env)
-		if err != nil {
-			return nil, err
+	// DATE
+	case "date_diff":
+		if len(n.arguments) != 2 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
 		}
+		return dateDiff.Call(args[0], args[1]), nil
+	case "day":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return day.Call(args[0]), nil
+	case "hour":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return hour.Call(args[0]), nil
+	case "minute":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return minute.Call(args[0]), nil
+	case "month":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return month.Call(args[0]), nil
+	case "quarter":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return quarter.Call(args[0]), nil
+	case "second":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return second.Call(args[0]), nil
+	case "week":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return week.Call(args[0]), nil
+	case "weekday":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return weekday.Call(args[0]), nil
+	case "year":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return year.Call(args[0]), nil
 
-		switch reflect.TypeOf(i).Kind() {
-		case reflect.Array, reflect.Slice, reflect.String:
-			return float64(reflect.ValueOf(i).Len()), nil
+	// MATH
+	case "abs":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
 		}
-		return nil, fmt.Errorf("invalid argument %v (type %T)", n, i)
+		return abs.Call(args[0]), nil
+	case "acos":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return acos.Call(args[0]), nil
+	case "asin":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return asin.Call(args[0]), nil
+	case "atan":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return atan.Call(args[0]), nil
+	case "ceil":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return ceil.Call(args[0]), nil
+	case "cos":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return cos.Call(args[0]), nil
+	case "floor":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return floor.Call(args[0]), nil
+	case "log":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return log.Call(args[0]), nil
+	case "log10":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return log10.Call(args[0]), nil
+	case "pow":
+		if len(n.arguments) != 2 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return pow.Call(args[0], args[1]), nil
+	case "round":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return round.Call(args[0]), nil
+	case "sin":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return sin.Call(args[0]), nil
+	case "tan":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return tan.Call(args[0]), nil
+
+	// TEXT
+	case "concat":
+		if len(n.arguments) != 2 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return concat.Call(args[0], args[1]), nil
+	case "length":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return length.Call(args[0]), nil
+	case "lower":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return lower.Call(args[0]), nil
+	case "trim":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return trim.Call(args[0]), nil
+	case "upper":
+		if len(n.arguments) != 1 {
+			return nil, fmt.Errorf("wrong count of argument: %v", n)
+		}
+		return upper.Call(args[0]), nil
 	}
 
 	return nil, fmt.Errorf("unknown %q builtin", n.name)
@@ -360,22 +401,45 @@ func (n conditionalNode) Eval(env interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	// If
-	if cond.(bool) {
-		// Then
-		a, err := n.exp1.Eval(env)
-		if err != nil {
-			return nil, err
-		}
-		return a, nil
-	}
-	// Else
-	b, err := n.exp2.Eval(env)
+	// Not optimized we evaluate both then and else
+	yes, err := n.exp1.Eval(env)
 	if err != nil {
 		return nil, err
 	}
-	return b, nil
 
+	no, err := n.exp2.Eval(env)
+	if err != nil {
+		return nil, err
+	}
+
+	if arr, ok := asArray(cond); ok {
+		arrYes, okYes := asArray(yes)
+		arrNo, okNo := asArray(no)
+
+		arrOut := make([]interface{}, len(arr))
+
+		for i, c := range arr {
+			if c.(bool) {
+				if okYes {
+					arrOut[i] = getAt(arrYes, i)
+				} else {
+					arrOut[i] = yes
+				}
+			} else {
+				if okNo {
+					arrOut[i] = getAt(arrNo, i)
+				} else {
+					arrOut[i] = no
+				}
+			}
+		}
+
+		return arrOut, nil
+	} else if cond.(bool) {
+		return yes, nil
+	} else {
+		return no, nil
+	}
 }
 
 func (n arrayNode) Eval(env interface{}) (interface{}, error) {
@@ -388,20 +452,4 @@ func (n arrayNode) Eval(env interface{}) (interface{}, error) {
 		array = append(array, val)
 	}
 	return array, nil
-}
-
-func (n mapNode) Eval(env interface{}) (interface{}, error) {
-	m := make(map[interface{}]interface{})
-	for _, pair := range n.pairs {
-		key, err := pair.key.Eval(env)
-		if err != nil {
-			return nil, err
-		}
-		value, err := pair.value.Eval(env)
-		if err != nil {
-			return nil, err
-		}
-		m[key] = value
-	}
-	return m, nil
 }
