@@ -1,126 +1,58 @@
-# Expr [![Build Status](https://travis-ci.org/antonmedv/expr.svg?branch=master)](https://travis-ci.org/antonmedv/expr) [![Go Report Card](https://goreportcard.com/badge/github.com/antonmedv/expr)](https://goreportcard.com/report/github.com/antonmedv/expr) [![Code Coverage](https://scrutinizer-ci.com/g/antonmedv/expr/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/antonmedv/expr/?branch=master) <a href="https://stars.medv.io/antonmedv/expr"><img src="https://stars.medv.io/antonmedv/expr.svg" alt="Sparkline" height="24"></a>
+
+# Expr
+[![Circle CI](https://circleci.com/gh/datasweet/expr.svg?style=svg)](https://circleci.com/gh/datasweet/datatable) [![GoDoc](https://godoc.org/github.com/datasweet/expr?status.png)](https://godoc.org/github.com/datasweet/expr) [![GitHub stars](https://img.shields.io/github/stars/datasweet/expr.svg)](https://github.com/datasweet/expr/stargazers)
+[![GitHub license](https://img.shields.io/github/license/datasweet/expr.svg)](https://github.com/datasweet/expr/blob/master/LICENSE)
+
+[![datasweet-logo](https://www.datasweet.fr/wp-content/uploads/2019/02/datasweet-black.png)](http://www.datasweet.fr)
 
 Expr is an engine that can evaluate expressions. 
+Expr is a fork from https://github.com/antonmedv/expr
 
-The purpose of the package is to allow users to use expressions inside configuration for more complex logic. 
-It is a perfect candidate for the foundation of a _business rule engine_. 
-The idea is to let configure things in a dynamic way without recompile of a program:
-
-```coffeescript
-# Get the special price if
-user.Group in ["good_customers", "collaborator"]
-
-# Promote article to the homepage when
-len(article.Comments) > 100 and article.Category not in ["misc"]
-
-# Send an alert when
-product.Stock < 15
-```
-
-Inspired by 
-* Symfony's [The ExpressionLanguage](https://github.com/symfony/expression-language) component,
-* Rob Pike's talk [Lexical Scanning in Go](https://talks.golang.org/2011/lex.slide).
-
-## Features
-
-* Works with any valid Go object (structs, maps, etc)
-* Static and dynamic typing ([example](https://godoc.org/github.com/antonmedv/expr#example-Define))
-  ```go
-  code := "groups[0].Title + user.Age"
-  p, err := expr.Parse(code, expr.Define("groups", []Group{}), expr.Define("user", User{}))
-  // err: invalid operation: groups[0].Name + user.Age (mismatched types string and int)
-  ```
-* User-friendly error messages
-  ```
-  unclosed "("
-  (boo + bar]
-  ----------^
-  ```
-* Reasonable set of basic operators
-* Fast (faster otto and goja, see [bench](https://github.com/antonmedv/expr/wiki/Benchmarks))
-
-## Install
-
-```
-go get -u github.com/antonmedv/expr
-```
-
-<a href="https://www.patreon.com/antonmedv">
-	<img src="https://c5.patreon.com/external/logo/become_a_patron_button@2x.png" width="160">
-</a>
-
-## Documentation
-
-* See [![GoDoc](https://godoc.org/github.com/antonmedv/expr?status.svg)](https://godoc.org/github.com/antonmedv/expr) for developer documentation,
-* See [The Expression Syntax](https://github.com/antonmedv/expr/wiki/The-Expression-Syntax) page to learn the syntax of the Expr expressions.
-
-## Examples
-
-Executing arbitrary expressions.
+We used the initial package to add custom formula in our package https://github.com/datasweet/datatable. 
+We forked the initial project to fit our needs: operators and functions must process scalar or slices.
 
 ```go
-env := map[string]interface{}{
-    "foo": 1,
-    "bar": struct{Value int}{1},
-}
-
-out, err := expr.Eval("foo + bar.Value", env)
+column + 1
 ```
+with column = [1,2,3,4,5]
+output = [2,3,4,5,6]
 
-Static type checker with struct as environment.
+Also, we removed the map nodes (ie {"foo": "bar}), the struct evaluation, and the type checking before evaluation.
 
+## Installation
 ```go
-type env struct {
-	Foo int
-	Bar bar
-}
-
-type bar struct {
-	Value int
-}
-
-p, err := expr.Parse("Foo + Bar.Value", expr.Env(env{}))
-
-out, err := expr.Run(p, env{1, bar{2}})
+go get github.com/datasweet/expr
 ```
 
-Using env's methods as functions inside expressions.
+## Who are we ?
+We are Datasweet, a french startup providing full service (big) data solutions.
 
-```go
-type env struct {
-	Name string
-}
-
-func (e env) Title() string {
-	return strings.Title(e.Name)
-}
-
-
-p, err := expr.Parse("'Hello ' ~ Title()", expr.Env(env{}))
-
-out, err := expr.Run(p, env{"world"})
-```
-
-Using embedded structs to construct env.
-
-```go
-type env struct {
-	helpers
-	Name string
-}
-
-type helpers struct{}
-
-func (h helpers) Title(s string) string {
-	return strings.Title(s)
-}
-
-
-p, err := expr.Parse("'Hello ' ~ Title(Name)", expr.Env(env{}))
-
-out, err := expr.Run(p, env{"world"})
-```
+## Questions ? problems ? suggestions ?
+If you find a bug or want to request a feature, please create a [GitHub Issue](https://github.com/datasweet/expr/issues/new).
 
 ## License
+```
+MIT License
 
-MIT
+Copyright (c) 2018 Anton Medvedev
+Portions Copyright (c) 2019 Datasweet
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+

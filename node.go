@@ -1,13 +1,11 @@
 package expr
 
 import (
-	"reflect"
 	"regexp"
 )
 
 // Node represents items of abstract syntax tree.
 type Node interface {
-	Type(table typesTable) (reflect.Type, error)
 	Eval(env interface{}) (interface{}, error)
 }
 
@@ -50,22 +48,6 @@ type matchesNode struct {
 	right Node
 }
 
-type propertyNode struct {
-	node     Node
-	property string
-}
-
-type indexNode struct {
-	node  Node
-	index Node
-}
-
-type methodNode struct {
-	node      Node
-	method    string
-	arguments []Node
-}
-
 type builtinNode struct {
 	name      string
 	arguments []Node
@@ -84,13 +66,4 @@ type conditionalNode struct {
 
 type arrayNode struct {
 	nodes []Node
-}
-
-type mapNode struct {
-	pairs []pairNode
-}
-
-type pairNode struct {
-	key   Node
-	value Node
 }

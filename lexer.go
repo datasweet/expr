@@ -98,12 +98,9 @@ func (l *lexer) emit(t tokenKind) {
 
 func (l *lexer) emitValue(t tokenKind, value string) {
 	c := len(l.tokens)
-	// Special case for joining "not" and ".." operators
+	// Special case for joining "not"
 	if c > 0 && l.tokens[c-1].is(operator, "not") && t == operator && value == "in" {
 		l.tokens[c-1].value = "not in"
-	} else if c > 0 && l.tokens[c-1].is(punctuation, ".") && t == punctuation && value == "." {
-		l.tokens[c-1].kind = operator
-		l.tokens[c-1].value = ".."
 	} else {
 		l.tokens = append(l.tokens, token{
 			kind:  t,
@@ -172,10 +169,10 @@ func lexRoot(l *lexer) stateFn {
 	case '0' <= r && r <= '9':
 		l.backup()
 		return lexNumber
-	case strings.ContainsRune("([{", r):
+	case strings.ContainsRune("([", r):
 		l.emit(punctuation)
 		l.brackets = append(l.brackets, r)
-	case strings.ContainsRune(")]}", r):
+	case strings.ContainsRune(")]", r):
 		if len(l.brackets) > 0 {
 			bracket := l.brackets[len(l.brackets)-1]
 			l.brackets = l.brackets[:len(l.brackets)-1]
@@ -187,7 +184,10 @@ func lexRoot(l *lexer) stateFn {
 		} else {
 			return l.errorf("unexpected %q", string(r))
 		}
-	case strings.ContainsRune(".,?:", r):
+	case r == '`':
+		l.ignore()
+		return lexVariable
+	case strings.ContainsRune(",?:", r):
 		l.emit(punctuation)
 	case strings.ContainsRune("!%&*+-/<=>^|~", r):
 		l.backup()
@@ -293,6 +293,23 @@ Loop:
 	return lexRoot
 }
 
+func lexVariable(l *lexer) stateFn {
+Loop:
+	for {
+		switch l.next() {
+		case eof, '\n':
+			return l.errorf("unterminated var string")
+		case '`':
+			break Loop
+		}
+	}
+	l.backup()
+	l.emit(name)
+	l.next()
+	l.ignore()
+	return lexRoot
+}
+
 func isSpace(r rune) bool {
 	return r == ' ' || r == '\t' || r == '\r' || r == '\n'
 }
@@ -310,8 +327,6 @@ func isBracketMatch(open, close rune) bool {
 	case "()":
 		return true
 	case "[]":
-		return true
-	case "{}":
 		return true
 	}
 	return false
