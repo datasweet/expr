@@ -139,13 +139,13 @@ func (n binaryNode) Eval(env interface{}) (interface{}, error) {
 		return multiply.Call(left, right), nil
 
 	case "/":
-		if div, ok := cast.AsFloat(right); ok && div == 0 {
+		if div, ok := cast.AsFloat64(right); ok && div == 0 {
 			return nil, fmt.Errorf("division by zero")
 		}
 		return divide.Call(left, right), nil
 
 	case "%":
-		if div, ok := cast.AsInt(right); ok && div == 0 {
+		if div, ok := cast.AsInt64(right); ok && div == 0 {
 			return nil, fmt.Errorf("division by zero")
 		}
 		return remainder.Call(left, right), nil

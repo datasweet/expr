@@ -9,8 +9,8 @@ import (
 
 func TestBinaryOperatorFunc(t *testing.T) {
 	var dummy binaryOperatorFunc = func(x, y interface{}) interface{} {
-		cx, _ := cast.AsInt(x)
-		cy, _ := cast.AsInt(y)
+		cx, _ := cast.AsInt64(x)
+		cy, _ := cast.AsInt64(y)
 		return cx + cy
 	}
 
@@ -67,7 +67,7 @@ func TestBinaryOperatorFunc(t *testing.T) {
 
 func TestUnaryOperatorFunc(t *testing.T) {
 	var dummy unaryOperatorFunc = func(x interface{}) interface{} {
-		cx, _ := cast.AsInt(x)
+		cx, _ := cast.AsInt64(x)
 		return cx + 10
 	}
 

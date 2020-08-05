@@ -16,7 +16,7 @@ var not unaryOperatorFunc = func(x interface{}) interface{} {
 // operator plus
 // x is float
 var plus unaryOperatorFunc = func(x interface{}) interface{} {
-	if nx, okx := cast.AsFloat(x); okx {
+	if nx, okx := cast.AsFloat64(x); okx {
 		return +nx
 	}
 	return nil
@@ -25,7 +25,7 @@ var plus unaryOperatorFunc = func(x interface{}) interface{} {
 // operator minus
 // x is float
 var minus unaryOperatorFunc = func(x interface{}) interface{} {
-	if nx, okx := cast.AsFloat(x); okx {
+	if nx, okx := cast.AsFloat64(x); okx {
 		return -nx
 	}
 	return nil
@@ -76,8 +76,8 @@ var notequals binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator |
 // x,y are int
 var bitwiseOR binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsInt(x)
-	cy, oky := cast.AsInt(y)
+	cx, okx := cast.AsInt64(x)
+	cy, oky := cast.AsInt64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -87,8 +87,8 @@ var bitwiseOR binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator ^
 // x,y are int
 var bitwiseXOR binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsInt(x)
-	cy, oky := cast.AsInt(y)
+	cx, okx := cast.AsInt64(x)
+	cy, oky := cast.AsInt64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -98,8 +98,8 @@ var bitwiseXOR binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator &
 // x,y are int
 var bitwiseAND binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsInt(x)
-	cy, oky := cast.AsInt(y)
+	cx, okx := cast.AsInt64(x)
+	cy, oky := cast.AsInt64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -109,8 +109,8 @@ var bitwiseAND binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator <
 // x,y are float
 var lt binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -120,8 +120,8 @@ var lt binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator <=
 // x,y are float
 var lte binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -131,8 +131,8 @@ var lte binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator >
 // x,y are float
 var gt binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -142,8 +142,8 @@ var gt binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator >=
 // x,y are float
 var gte binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -153,8 +153,8 @@ var gte binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator +
 // x,y are float
 var add binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -164,8 +164,8 @@ var add binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator -
 // x,y are float
 var substract binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -175,8 +175,8 @@ var substract binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator *
 // x,y are float
 var multiply binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -186,8 +186,8 @@ var multiply binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator /
 // x,y are float
 var divide binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -197,8 +197,8 @@ var divide binaryOperatorFunc = func(x, y interface{}) interface{} {
 // operator %
 // x,y are int
 var remainder binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsInt(x)
-	cy, oky := cast.AsInt(y)
+	cx, okx := cast.AsInt64(x)
+	cy, oky := cast.AsInt64(y)
 	if !okx || !oky {
 		return nil
 	}

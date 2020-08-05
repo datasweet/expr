@@ -8,7 +8,7 @@ import (
 )
 
 func toNumber(n Node, val interface{}) float64 {
-	v, ok := cast.AsFloat(val)
+	v, ok := cast.AsFloat64(val)
 	if ok {
 		return v
 	}
@@ -28,10 +28,10 @@ func canBeNumber(val interface{}) bool {
 
 func equal(left, right interface{}) bool {
 	if isNumber(left) && canBeNumber(right) {
-		right, _ := cast.AsFloat(right)
+		right, _ := cast.AsFloat64(right)
 		return left == right
 	} else if canBeNumber(left) && isNumber(right) {
-		left, _ := cast.AsFloat(left)
+		left, _ := cast.AsFloat64(left)
 		return left == right
 	} else {
 		return reflect.DeepEqual(left, right)
@@ -42,7 +42,7 @@ func extract(val interface{}, i interface{}) (interface{}, bool) {
 	v := reflect.ValueOf(val)
 	switch v.Kind() {
 	case reflect.Array, reflect.Slice, reflect.String:
-		n, ok := cast.AsInt(i)
+		n, ok := cast.AsInt64(i)
 		if !ok {
 			break
 		}

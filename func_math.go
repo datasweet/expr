@@ -8,7 +8,7 @@ import (
 
 // ABS(x float)
 var abs unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Abs(cx)
 	}
 	return nil
@@ -16,7 +16,7 @@ var abs unaryOperatorFunc = func(x interface{}) interface{} {
 
 // ACOS(x float)
 var acos unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Acos(cx)
 	}
 	return nil
@@ -24,7 +24,7 @@ var acos unaryOperatorFunc = func(x interface{}) interface{} {
 
 // ASIN(x float)
 var asin unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Asin(cx)
 	}
 	return nil
@@ -32,7 +32,7 @@ var asin unaryOperatorFunc = func(x interface{}) interface{} {
 
 // ATAN(x float)
 var atan unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Atan(cx)
 	}
 	return nil
@@ -40,7 +40,7 @@ var atan unaryOperatorFunc = func(x interface{}) interface{} {
 
 // CEIL(x float)
 var ceil unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Ceil(cx)
 	}
 	return nil
@@ -48,7 +48,7 @@ var ceil unaryOperatorFunc = func(x interface{}) interface{} {
 
 // COS(x float)
 var cos unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Cos(cx)
 	}
 	return nil
@@ -56,7 +56,7 @@ var cos unaryOperatorFunc = func(x interface{}) interface{} {
 
 // FLOOR(x float)
 var floor unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Floor(cx)
 	}
 	return nil
@@ -64,7 +64,7 @@ var floor unaryOperatorFunc = func(x interface{}) interface{} {
 
 // LOG(x float)
 var log unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Log(cx)
 	}
 	return nil
@@ -72,7 +72,7 @@ var log unaryOperatorFunc = func(x interface{}) interface{} {
 
 // LOG10(x float)
 var log10 unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Log10(cx)
 	}
 	return nil
@@ -81,8 +81,8 @@ var log10 unaryOperatorFunc = func(x interface{}) interface{} {
 // POW(x float, y float)
 // Used with operator **
 var pow binaryOperatorFunc = func(x, y interface{}) interface{} {
-	cx, okx := cast.AsFloat(x)
-	cy, oky := cast.AsFloat(y)
+	cx, okx := cast.AsFloat64(x)
+	cy, oky := cast.AsFloat64(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -91,7 +91,7 @@ var pow binaryOperatorFunc = func(x, y interface{}) interface{} {
 
 // ROUND(x float)
 var round unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Round(cx)
 	}
 	return nil
@@ -99,7 +99,7 @@ var round unaryOperatorFunc = func(x interface{}) interface{} {
 
 // SIN(x float)
 var sin unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Sin(cx)
 	}
 	return nil
@@ -107,7 +107,7 @@ var sin unaryOperatorFunc = func(x interface{}) interface{} {
 
 // TAN(x float)
 var tan unaryOperatorFunc = func(x interface{}) interface{} {
-	if cx, okx := cast.AsFloat(x); okx {
+	if cx, okx := cast.AsFloat64(x); okx {
 		return math.Tan(cx)
 	}
 	return nil

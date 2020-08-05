@@ -7,8 +7,8 @@ import (
 // DATE_DIFF(x date, y date)
 // Returns the difference in days between X and Y (X - Y)
 var dateDiff binaryOperatorFunc = func(x interface{}, y interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
-	cy, oky := cast.AsDatetime(y)
+	cx, okx := cast.AsTime(x)
+	cy, oky := cast.AsTime(y)
 	if !okx || !oky {
 		return nil
 	}
@@ -18,7 +18,7 @@ var dateDiff binaryOperatorFunc = func(x interface{}, y interface{}) interface{}
 // DAY(x date)
 // Returns the day of X
 var day unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}
@@ -28,7 +28,7 @@ var day unaryOperatorFunc = func(x interface{}) interface{} {
 // HOUR(x date)
 // Returns the hours in X in UTC timezone
 var hour unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}
@@ -38,7 +38,7 @@ var hour unaryOperatorFunc = func(x interface{}) interface{} {
 // MINUTE(x date)
 // Returns the minutes  in X in UTC timezone
 var minute unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}
@@ -48,7 +48,7 @@ var minute unaryOperatorFunc = func(x interface{}) interface{} {
 // MONTH(x date)
 // Returns the month in X
 var month unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}
@@ -58,7 +58,7 @@ var month unaryOperatorFunc = func(x interface{}) interface{} {
 // QUARTER(x date)
 // Returns the quarter of X
 var quarter unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}
@@ -68,7 +68,7 @@ var quarter unaryOperatorFunc = func(x interface{}) interface{} {
 // SECOND(x date)
 // Returns the seconds in X in UTC timezone
 var second unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}
@@ -78,7 +78,7 @@ var second unaryOperatorFunc = func(x interface{}) interface{} {
 // WEEK(x date)
 // Returns the week of X from start of year as per ISO 8601 standard
 var week unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}
@@ -89,7 +89,7 @@ var week unaryOperatorFunc = func(x interface{}) interface{} {
 // WEEKDAY(x date)
 // Returns the day of the week of X
 var weekday unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}
@@ -99,7 +99,7 @@ var weekday unaryOperatorFunc = func(x interface{}) interface{} {
 // YEAR(x date)
 // Returns the year of X
 var year unaryOperatorFunc = func(x interface{}) interface{} {
-	cx, okx := cast.AsDatetime(x)
+	cx, okx := cast.AsTime(x)
 	if !okx {
 		return nil
 	}

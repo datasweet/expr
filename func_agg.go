@@ -8,7 +8,7 @@ import (
 // AVG(x...)
 // Returns the average of all values of X
 var avg = func(x ...interface{}) interface{} {
-	if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 		if s, err := stats.Mean(values); err == nil {
 			return s
 		}
@@ -38,7 +38,7 @@ var countdistinct = func(x ...interface{}) interface{} {
 // CUSUM(x...)
 // Returns the cumulative sum of values of X
 var cusum = func(x ...interface{}) interface{} {
-	if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 		if s, err := stats.CumulativeSum(values); err == nil {
 			return s
 		}
@@ -49,7 +49,7 @@ var cusum = func(x ...interface{}) interface{} {
 // MAX(x...)
 // Returns the maximum value of X
 var max = func(x ...interface{}) interface{} {
-	if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 		if s, err := stats.Max(values); err == nil {
 			return s
 		}
@@ -60,7 +60,7 @@ var max = func(x ...interface{}) interface{} {
 // MEDIAN(x...)
 // Returns the median of all values of X
 var median = func(x ...interface{}) interface{} {
-	if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 		if s, err := stats.Median(values); err == nil {
 			return s
 		}
@@ -71,7 +71,7 @@ var median = func(x ...interface{}) interface{} {
 // MIN(x...)
 // Returns the minimum value of X
 var min = func(x ...interface{}) interface{} {
-	if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 		if s, err := stats.Min(values); err == nil {
 			return s
 		}
@@ -82,8 +82,8 @@ var min = func(x ...interface{}) interface{} {
 // PERCENTILE(r, x...)
 // Returns the percentile rank R of X
 var percentile = func(r interface{}, x ...interface{}) interface{} {
-	if rank, rok := cast.AsFloat(r); rok {
-		if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if rank, rok := cast.AsFloat64(r); rok {
+		if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 			if s, err := stats.Percentile(values, rank); err == nil {
 				return s
 			}
@@ -95,7 +95,7 @@ var percentile = func(r interface{}, x ...interface{}) interface{} {
 // STDDEV(x...)
 // Returns the standard deviation of X
 var stddev = func(x ...interface{}) interface{} {
-	if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 		if s, err := stats.StandardDeviation(values); err == nil {
 			return s
 		}
@@ -106,7 +106,7 @@ var stddev = func(x ...interface{}) interface{} {
 // SUM(x...)
 // Returns the sum of all values of X
 var sum = func(x ...interface{}) interface{} {
-	if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 		if s, err := stats.Sum(values); err == nil {
 			return s
 		}
@@ -117,7 +117,7 @@ var sum = func(x ...interface{}) interface{} {
 // VARIANCE(x...)
 // Returns the variance of X
 var variance = func(x ...interface{}) interface{} {
-	if values, ok := cast.AsFloatArray(flatten(x)...); ok {
+	if values, ok := cast.AsFloat64Slice(flatten(x)...); ok {
 		if s, err := stats.Variance(values); err == nil {
 			return s
 		}
